@@ -1,72 +1,45 @@
 """Tools for Confluence spaces operations."""
 
-from typing import Dict, Any, Optional
-
-from ..confluence.client import ConfluenceClient
-from ..confluence.config import ConfluenceConfig
+from typing import Any
 
 
-def get_spaces(
-    base_url: Optional[str] = None,
-    username: Optional[str] = None,
-    password: Optional[str] = None,
-    start: int = 0,
-    limit: int = 10
-) -> Dict[str, Any]:
+def get_spaces(ctx, **arguments) -> dict:
     """
-    Tool to retrieve Confluence spaces.
+    Retrieve Confluence spaces.
 
     Args:
-        base_url: Confluence base URL (optional, can use config)
-        username: Confluence username (optional, can use config)
-        password: Confluence password (optional, can use config)
-        start: Starting index for pagination
-        limit: Maximum number of spaces to return
+        ctx: Application context with Confluence client
+        arguments: Arguments from the tool call
+            - start: Starting index for pagination (default 0)
+            - limit: Maximum number of spaces to return (default 10, max 50)
 
     Returns:
         Dictionary of spaces
     """
-    # Use config if not explicitly provided
-    config = ConfluenceConfig()
-    
-    base_url = base_url or config.base_url
-    username = username or config.username
-    password = password or config.password
+    if not ctx or not ctx.confluence:
+        raise ValueError("Confluence is not configured.")
 
-    if not all([base_url, username, password]):
-        raise ValueError("Missing Confluence connection details. Please provide or set in config.")
+    start = min(int(arguments.get("start", 0)), 1000)
+    limit = min(int(arguments.get("limit", 10)), 50)
 
-    client = ConfluenceClient(base_url, username, password)
-    return client.get_spaces(start=start, limit=limit)
+    return ctx.confluence.get_spaces(start=start, limit=limit)
 
 
-def get_user_contributed_spaces(
-    base_url: Optional[str] = None,
-    username: Optional[str] = None,
-    password: Optional[str] = None,
-    limit: int = 250
-) -> Dict[str, Any]:
+def get_user_contributed_spaces(ctx, **arguments) -> dict:
     """
-    Tool to retrieve Confluence spaces the current user has contributed to.
+    Retrieve Confluence spaces the current user has contributed to.
 
     Args:
-        base_url: Confluence base URL (optional, can use config)
-        username: Confluence username (optional, can use config)
-        password: Confluence password (optional, can use config)
-        limit: Maximum number of results to return
+        ctx: Application context with Confluence client
+        arguments: Arguments from the tool call
+            - limit: Maximum number of results to return (default 250, max 250)
 
     Returns:
         Dictionary of user-contributed spaces
     """
-    # Use config if not explicitly provided
-    config = ConfluenceConfig()
-    
-    base_url = base_url or config.base_url
-    username = username or config.username
-    password = password or config.password
+    if not ctx or not ctx.confluence:
+        raise ValueError("Confluence is not configured.")
 
-    if not all([base_url, username, password]):
-        raise ValueError("Missing Confluence connection details. Please provide or set in config.")
+    limit = min(int(arguments.get("limit", 250)), 250)
 
-    client = ConfluenceClient(base_url, username, password)
-    return client.get_user_contributed_spaces(limit=limit)
+    return ctx.confluence.get_user_contributed_spaces(limit=limit)
